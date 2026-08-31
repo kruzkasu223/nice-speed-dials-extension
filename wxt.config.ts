@@ -26,8 +26,8 @@ export default defineConfig({
     name: "Nice Speed Dials",
     description:
       "A fast, calm, and customizable new-tab page powered by your browser bookmarks.",
-    version: "5",
-    version_name: "boron (v5)",
+    version: "6",
+    version_name: "carbon (v6)",
     permissions: [
       "bookmarks",
       "contextMenus",
