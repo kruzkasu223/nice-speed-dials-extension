@@ -8,6 +8,7 @@ import {
 import {
   type BookmarkDataType,
   getFolderIcon,
+  DEFAULT_VALUES,
   type ModalTypes,
   openLinksInNewTab,
 } from "~/stores"
@@ -20,6 +21,7 @@ interface P {
   duplicateSpeedDial: (item: Partial<BookmarkDataType>) => void
   openFolder: (folder: BookmarkDataType) => void
   showTitle: boolean
+  textSize: number
 }
 
 const gridItemActionClass =
@@ -67,7 +69,16 @@ export const GridItem = (props: P) => {
         >
           <TooltipTrigger
             asChild={(triggerProps) => (
-              <span {...triggerProps()} class="w-full truncate text-center">
+              <span
+                {...triggerProps()}
+                class="w-full truncate text-center"
+                style={{
+                  "font-size":
+                    props.textSize === DEFAULT_VALUES.dialTextSize
+                      ? undefined
+                      : `${props.textSize}px`,
+                }}
+              >
                 {props.item.title}
               </span>
             )}

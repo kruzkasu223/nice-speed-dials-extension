@@ -19,6 +19,7 @@ import {
   dialSize,
   dialRadius,
   showSpeedDialTitles,
+  dialTextSize,
   showAddNewButton,
   showSettingsButton,
   showHelpButton,
@@ -44,6 +45,9 @@ export const Grid = () => {
   const [currentDialRadius, setCurrentDialRadius] = createSignal(
     DEFAULT_VALUES.dialRadius
   )
+  const [currentDialTextSize, setCurrentDialTextSize] = createSignal(
+    DEFAULT_VALUES.dialTextSize
+  )
   const [currentShowSpeedDialTitles, setCurrentShowSpeedDialTitles] =
     createSignal(DEFAULT_VALUES.showSpeedDialTitles)
   const [currentShowAddNew, setCurrentShowAddNew] = createSignal(
@@ -65,6 +69,7 @@ export const Grid = () => {
     setCurrentDialSize(await dialSize.getValue())
     setCurrentDialRadius(await dialRadius.getValue())
     setCurrentShowSpeedDialTitles(await showSpeedDialTitles.getValue())
+    setCurrentDialTextSize(await dialTextSize.getValue())
     setCurrentShowAddNew(await showAddNewButton.getValue())
     setCurrentShowSettings(await showSettingsButton.getValue())
     setCurrentShowHelp(await showHelpButton.getValue())
@@ -77,6 +82,7 @@ export const Grid = () => {
     dialSize.watch(setCurrentDialSize)
     dialRadius.watch(setCurrentDialRadius)
     showSpeedDialTitles.watch(setCurrentShowSpeedDialTitles)
+    dialTextSize.watch(setCurrentDialTextSize)
     showAddNewButton.watch(setCurrentShowAddNew)
     showSettingsButton.watch(setCurrentShowSettings)
     showHelpButton.watch(setCurrentShowHelp)
@@ -244,6 +250,7 @@ export const Grid = () => {
                   duplicateSpeedDial={duplicateSpeedDial}
                   openFolder={openFolder}
                   showTitle={currentShowSpeedDialTitles()}
+                  textSize={currentDialTextSize()}
                 />
               )}
             </For>

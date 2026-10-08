@@ -8,6 +8,7 @@ export const DEFAULT_VALUES = {
   dialSize: 112,
   dialRadius: "lg",
   showSpeedDialTitles: true,
+  dialTextSize: 13,
   showAddNewButton: true,
   showSettingsButton: true,
   showHelpButton: true,
@@ -37,6 +38,10 @@ export const showSpeedDialTitles = storage.defineItem<boolean>(
   "local:showSpeedDialTitles",
   { fallback: DEFAULT_VALUES.showSpeedDialTitles }
 )
+
+export const dialTextSize = storage.defineItem<number>("local:dialTextSize", {
+  fallback: DEFAULT_VALUES.dialTextSize,
+})
 
 export const showAddNewButton = storage.defineItem<boolean>(
   "local:showAddNewButton",
@@ -100,6 +105,7 @@ export const resetAllSettings = async () => {
     dialSize.setValue(DEFAULT_VALUES.dialSize),
     dialRadius.setValue(DEFAULT_VALUES.dialRadius),
     showSpeedDialTitles.setValue(DEFAULT_VALUES.showSpeedDialTitles),
+    dialTextSize.setValue(DEFAULT_VALUES.dialTextSize),
     showAddNewButton.setValue(DEFAULT_VALUES.showAddNewButton),
     showSettingsButton.setValue(DEFAULT_VALUES.showSettingsButton),
     showHelpButton.setValue(DEFAULT_VALUES.showHelpButton),
@@ -127,6 +133,12 @@ export const resetSetting = async (
       break
     case "dialRadius":
       await dialRadius.setValue(defaultValue as string)
+      break
+    case "dialTextSize":
+      await Promise.all([
+        dialTextSize.setValue(DEFAULT_VALUES.dialTextSize),
+        showSpeedDialTitles.setValue(DEFAULT_VALUES.showSpeedDialTitles),
+      ])
       break
     case "showSpeedDialTitles":
       await showSpeedDialTitles.setValue(defaultValue as boolean)

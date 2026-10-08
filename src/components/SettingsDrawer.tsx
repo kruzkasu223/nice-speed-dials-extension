@@ -15,6 +15,7 @@ import {
   dialSize,
   dialRadius,
   showSpeedDialTitles,
+  dialTextSize,
   showAddNewButton,
   showSettingsButton,
   showHelpButton,
@@ -62,6 +63,18 @@ const RADII = [
   "4xl",
 ] as const
 
+const TEXT_SIZES = [
+  { label: "none", size: 0 },
+  { label: "xs", size: 10 },
+  { label: "sm", size: 12 },
+  { label: "md", size: 13 },
+  { label: "lg", size: 14 },
+  { label: "xl", size: 16 },
+  { label: "2xl", size: 18 },
+  { label: "3xl", size: 20 },
+  { label: "4xl", size: 24 },
+] as const
+
 export const SettingsDrawer = () => {
   // Reactive signals for settings
   const [currentGridColumns, setCurrentGridColumns] = createSignal<
@@ -72,6 +85,9 @@ export const SettingsDrawer = () => {
   )
   const [currentDialRadius, setCurrentDialRadius] = createSignal(
     DEFAULT_VALUES.dialRadius
+  )
+  const [currentDialTextSize, setCurrentDialTextSize] = createSignal(
+    DEFAULT_VALUES.dialTextSize
   )
   const [currentShowSpeedDialTitles, setCurrentShowSpeedDialTitles] =
     createSignal(DEFAULT_VALUES.showSpeedDialTitles)
@@ -108,6 +124,7 @@ export const SettingsDrawer = () => {
     setCurrentDialSize(await dialSize.getValue())
     setCurrentDialRadius(await dialRadius.getValue())
     setCurrentShowSpeedDialTitles(await showSpeedDialTitles.getValue())
+    setCurrentDialTextSize(await dialTextSize.getValue())
     setCurrentShowAddNew(await showAddNewButton.getValue())
     setCurrentShowSettings(await showSettingsButton.getValue())
     setCurrentShowHelp(await showHelpButton.getValue())
@@ -123,6 +140,7 @@ export const SettingsDrawer = () => {
     dialSize.watch(setCurrentDialSize)
     dialRadius.watch(setCurrentDialRadius)
     showSpeedDialTitles.watch(setCurrentShowSpeedDialTitles)
+    dialTextSize.watch(setCurrentDialTextSize)
     showAddNewButton.watch(setCurrentShowAddNew)
     showSettingsButton.watch(setCurrentShowSettings)
     showHelpButton.watch(setCurrentShowHelp)
@@ -408,14 +426,55 @@ export const SettingsDrawer = () => {
           <Divider />
 
           <div>
-            <div class="flex items-center justify-between gap-2">
-              <SettingItemTitle title="Show speed dial titles" />
-              <Switch
-                aria-label="Show speed dial titles"
-                checked={currentShowSpeedDialTitles()}
-                onCheckedChange={(e) => showSpeedDialTitles.setValue(e.checked)}
-              />
-            </div>
+            <SettingItemTitle
+              title="Dial text size"
+              subTitle="Set the size of speed dial titles. Choose none to hide them."
+              showReset
+              onReset={() => resetSetting("dialTextSize")}
+            />
+            <Slider
+              aria-label={["Dial text size"]}
+              class="mt-4 mb-6"
+              min={0}
+              max={TEXT_SIZES.length - 1}
+              step={1}
+              value={[
+                currentShowSpeedDialTitles()
+                  ? TEXT_SIZES.reduce(
+                      (nearest, item, index) =>
+                        index > 0 &&
+                        Math.abs(item.size - currentDialTextSize()) <
+                          Math.abs(
+                            (TEXT_SIZES[nearest]?.size ??
+                              DEFAULT_VALUES.dialTextSize) -
+                              currentDialTextSize()
+                          )
+                          ? index
+                          : nearest,
+                      3
+                    )
+                  : 0,
+              ]}
+              getAriaValueText={({ value }) => TEXT_SIZES[value]?.label ?? "md"}
+              onValueChange={(e) => {
+                const index = e.value[0]
+                if (index === undefined) return
+                const option = TEXT_SIZES[index]
+                if (!option) return
+                if (option.size === 0) {
+                  void showSpeedDialTitles.setValue(false)
+                } else {
+                  void Promise.all([
+                    dialTextSize.setValue(option.size),
+                    showSpeedDialTitles.setValue(true),
+                  ])
+                }
+              }}
+              marks={TEXT_SIZES.map((option, value) => ({
+                value,
+                label: option.label,
+              }))}
+            />
           </div>
 
           <Divider />
