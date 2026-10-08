@@ -127,7 +127,8 @@ const refreshFolderTree = async (root: BookmarkDataType) => {
   }
 }
 
-const getSpeedDials = async (folderId?: string) => {
+const loadSpeedDials = async (folderId?: string, recordNavigation = false) => {
+  const previousFolderId = currentFolder()?.id
   const root = await getDefaultSpeedDialsFolder()
   const requestedFolderId = folderId ?? currentFolder()?.id ?? root.id
   const nextPath = await getFolderPath(requestedFolderId, root)
@@ -145,21 +146,46 @@ const getSpeedDials = async (folderId?: string) => {
     setFolderPath([root])
     setSpeedDials(await browser.bookmarks.getChildren(root.id))
   }
+
+  const resolvedFolderId = currentFolder()?.id
+  const state = {
+    ...window.history.state,
+    speedDialsFolderId: resolvedFolderId,
+  }
+  if (recordNavigation && previousFolderId !== resolvedFolderId) {
+    window.history.pushState(state, "")
+  } else if (
+    !window.history.state?.speedDialsFolderId ||
+    window.history.state.speedDialsFolderId === (folderId ?? previousFolderId)
+  ) {
+    // Seed the initial entry and repair entries whose folder was deleted.
+    window.history.replaceState(state, "")
+  }
+}
+
+// Keep rapid navigation and bookmark refreshes in order.
+let folderLoadQueue: Promise<void> = Promise.resolve()
+const getSpeedDials = (folderId?: string, recordNavigation = false) => {
+  const load = folderLoadQueue.then(() =>
+    loadSpeedDials(folderId, recordNavigation)
+  )
+  folderLoadQueue = load.catch(() => {})
+  return load
 }
 
 const openFolder = async (folder: BookmarkDataType) => {
   if (folder.url) return
-  await getSpeedDials(folder.id)
+  await navigateToFolder(folder.id)
 }
 
 const navigateToFolder = async (folderId: string) => {
-  await getSpeedDials(folderId)
+  await getSpeedDials(folderId, true)
 }
 
 const navigateToParentFolder = async () => {
   const path = folderPath()
   const parent = path.at(-2)
-  if (parent) await getSpeedDials(parent.id)
+  if (parent) await navigateToFolder(parent.id)
 }
 
 const handleBookmarkChange = () => {
@@ -306,7 +332,10 @@ const moveSpeedDial = async (
 }
 
 createEffect(() => {
-  void getSpeedDials()
+  const savedFolderId = window.history.state?.speedDialsFolderId
+  void getSpeedDials(
+    typeof savedFolderId === "string" ? savedFolderId : undefined
+  )
     .catch((error) => {
       console.error("Unable to load speed dials", error)
     })
@@ -315,6 +344,19 @@ createEffect(() => {
     })
   bookmarkEventListeners()
   onCleanup(removeBookmarkEventListeners)
+
+  const handleHistoryNavigation = (event: PopStateEvent) => {
+    const folderId = event.state?.speedDialsFolderId
+    void getSpeedDials(
+      typeof folderId === "string" ? folderId : undefined
+    ).catch((error) =>
+      console.error("Unable to navigate folder history", error)
+    )
+  }
+  window.addEventListener("popstate", handleHistoryNavigation)
+  onCleanup(() =>
+    window.removeEventListener("popstate", handleHistoryNavigation)
+  )
 })
 
 export {
