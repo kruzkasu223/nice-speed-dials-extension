@@ -1,4 +1,5 @@
 import { removeFolderLayouts } from "./useFolderLayout"
+import { findOrCreateSpeedDialsFolder } from "~/utils/speedDialBookmarks"
 import {
   batch,
   createEffect,
@@ -20,11 +21,6 @@ import {
 export type BookmarkDataType = Browser.bookmarks.BookmarkTreeNode
 export type SpeedDialValues = Partial<BookmarkDataType> & { icon?: string }
 
-const IS_DEV = import.meta.env.MODE === "development"
-
-const DEFAULT_SPEED_DIALS_FOLDER_NAME = IS_DEV
-  ? "DEV_NICE_SPEED_DIALS_BOOKMARKS_[DO_NOT_DELETE]"
-  : "NICE_SPEED_DIALS_BOOKMARKS_[DO_NOT_DELETE]"
 const BOOKMARK_EVENTS = [
   "onChanged",
   "onCreated",
@@ -67,14 +63,6 @@ const speedDialsGrid = createMemo(() => {
   return { height, width }
 })
 
-const createDefaultSpeedDialsFolder = async () => {
-  const created = await browser.bookmarks.create({
-    title: DEFAULT_SPEED_DIALS_FOLDER_NAME,
-  })
-  setDefaultSpeedDialsFolder(created)
-  return created
-}
-
 const getDefaultSpeedDialsFolder = async () => {
   const cachedFolder = defaultSpeedDialsFolder()
 
@@ -87,19 +75,9 @@ const getDefaultSpeedDialsFolder = async () => {
     }
   }
 
-  const results = await browser.bookmarks.search({
-    title: DEFAULT_SPEED_DIALS_FOLDER_NAME,
-  })
-
-  if (results && results.length > 0) {
-    const defaultFolder = results.find((bookmark) => !bookmark.url)
-    if (defaultFolder) {
-      setDefaultSpeedDialsFolder(defaultFolder)
-      return defaultFolder
-    }
-  }
-
-  return await createDefaultSpeedDialsFolder()
+  const folder = await findOrCreateSpeedDialsFolder()
+  setDefaultSpeedDialsFolder(folder)
+  return folder
 }
 
 const getFolderPath = async (folderId: string, root: BookmarkDataType) => {

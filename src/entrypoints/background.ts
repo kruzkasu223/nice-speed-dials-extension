@@ -1,7 +1,7 @@
 import { defineBackground } from "wxt/utils/define-background"
 import { storage } from "wxt/utils/storage"
 import { browser, type Browser } from "wxt/browser"
-import { addNewSpeedDial } from "~/stores"
+import { findOrCreateSpeedDialsFolder } from "~/utils/speedDialBookmarks"
 
 const UNINSTALL_SURVEY_FORM_URL = "https://tally.so/r/68Bjoe"
 
@@ -41,8 +41,12 @@ export default defineBackground(() => {
 
     if (info.menuItemId === "addToSpeedDials") {
       if (!tab?.url) return
-      await addNewSpeedDial({
-        title: tab?.title ?? new URL(tab.url).hostname,
+      const title = (tab.title ?? new URL(tab.url).hostname).trim()
+      if (!title) return
+      const folder = await findOrCreateSpeedDialsFolder()
+      await browser.bookmarks.create({
+        parentId: folder.id,
+        title,
         url: tab.url,
       })
     }
