@@ -11,6 +11,7 @@ export const DEFAULT_VALUES = {
   showSettingsButton: true,
   showHelpButton: true,
   openLinksInNewTab: false,
+  rememberLastFolder: false,
   disableDragAndDrop: false,
   darkMode: true,
   mainBackgroundColor: "#2C2124",
@@ -61,6 +62,16 @@ export const disableDragAndDrop = storage.defineItem<boolean>(
   { fallback: DEFAULT_VALUES.disableDragAndDrop }
 )
 
+export const rememberLastFolder = storage.defineItem<boolean>(
+  "local:rememberLastFolder",
+  { fallback: DEFAULT_VALUES.rememberLastFolder }
+)
+
+export const lastOpenedFolderId = storage.defineItem<string | null>(
+  "local:lastOpenedFolderId",
+  { fallback: null }
+)
+
 export const darkMode = storage.defineItem<boolean>("local:darkMode", {
   fallback: DEFAULT_VALUES.darkMode,
 })
@@ -91,6 +102,8 @@ export const resetAllSettings = async () => {
     showSettingsButton.setValue(DEFAULT_VALUES.showSettingsButton),
     showHelpButton.setValue(DEFAULT_VALUES.showHelpButton),
     openLinksInNewTab.setValue(DEFAULT_VALUES.openLinksInNewTab),
+    rememberLastFolder.setValue(DEFAULT_VALUES.rememberLastFolder),
+    lastOpenedFolderId.removeValue(),
     disableDragAndDrop.setValue(DEFAULT_VALUES.disableDragAndDrop),
     darkMode.setValue(DEFAULT_VALUES.darkMode),
     mainBackgroundColor.setValue(DEFAULT_VALUES.mainBackgroundColor),
@@ -130,6 +143,10 @@ export const resetSetting = async (
       break
     case "disableDragAndDrop":
       await disableDragAndDrop.setValue(defaultValue as boolean)
+      break
+    case "rememberLastFolder":
+      await rememberLastFolder.setValue(DEFAULT_VALUES.rememberLastFolder)
+      await lastOpenedFolderId.removeValue()
       break
     case "darkMode":
       await darkMode.setValue(defaultValue as boolean)

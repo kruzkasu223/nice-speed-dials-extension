@@ -13,6 +13,7 @@ import {
   showSettingsButton,
   showHelpButton,
   openLinksInNewTab,
+  rememberLastFolder,
   disableDragAndDrop,
   darkMode,
   mainBackgroundColor,
@@ -76,6 +77,8 @@ export const SettingsDrawer = () => {
   const [currentOpenLinksNewTab, setCurrentOpenLinksNewTab] = createSignal(
     DEFAULT_VALUES.openLinksInNewTab
   )
+  const [currentRememberLastFolder, setCurrentRememberLastFolder] =
+    createSignal(DEFAULT_VALUES.rememberLastFolder)
   const [currentDisableDragDrop, setCurrentDisableDragDrop] = createSignal(
     DEFAULT_VALUES.disableDragAndDrop
   )
@@ -99,6 +102,7 @@ export const SettingsDrawer = () => {
     setCurrentShowSettings(await showSettingsButton.getValue())
     setCurrentShowHelp(await showHelpButton.getValue())
     setCurrentOpenLinksNewTab(await openLinksInNewTab.getValue())
+    setCurrentRememberLastFolder(await rememberLastFolder.getValue())
     setCurrentDisableDragDrop(await disableDragAndDrop.getValue())
     setCurrentDarkMode(await darkMode.getValue())
     setCurrentBgColor(await mainBackgroundColor.getValue())
@@ -113,6 +117,7 @@ export const SettingsDrawer = () => {
     showSettingsButton.watch(setCurrentShowSettings)
     showHelpButton.watch(setCurrentShowHelp)
     openLinksInNewTab.watch(setCurrentOpenLinksNewTab)
+    rememberLastFolder.watch(setCurrentRememberLastFolder)
     disableDragAndDrop.watch(setCurrentDisableDragDrop)
     darkMode.watch(setCurrentDarkMode)
     mainBackgroundColor.watch(setCurrentBgColor)
@@ -413,6 +418,22 @@ export const SettingsDrawer = () => {
             </div>
 
             <Divider /> */}
+
+          <div>
+            <div class="flex items-center justify-between gap-2">
+              <SettingItemTitle
+                title="Remember last opened folder"
+                info="Start new tabs in your last opened folder."
+              />
+              <Switch
+                aria-label="Remember last opened folder"
+                checked={currentRememberLastFolder()}
+                onCheckedChange={(e) => rememberLastFolder.setValue(e.checked)}
+              />
+            </div>
+          </div>
+
+          <Divider />
 
           <div>
             <div class="flex items-center justify-between gap-2">

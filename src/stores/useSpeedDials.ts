@@ -3,6 +3,7 @@ import { createStore } from "solid-js/store"
 // import { notify } from '~/components/Toast'
 import { getGridDimensions } from "~/utils"
 import { type Browser, browser } from "wxt/browser"
+import { lastOpenedFolderId, rememberLastFolder } from "./useSettings"
 import {
   getFolderIcon,
   removeFolderIcons,
@@ -148,6 +149,13 @@ const loadSpeedDials = async (folderId?: string, recordNavigation = false) => {
   }
 
   const resolvedFolderId = currentFolder()?.id
+  if (
+    resolvedFolderId &&
+    previousFolderId !== resolvedFolderId &&
+    (await rememberLastFolder.getValue())
+  ) {
+    await lastOpenedFolderId.setValue(resolvedFolderId)
+  }
   const state = {
     ...window.history.state,
     speedDialsFolderId: resolvedFolderId,
@@ -333,9 +341,17 @@ const moveSpeedDial = async (
 
 createEffect(() => {
   const savedFolderId = window.history.state?.speedDialsFolderId
-  void getSpeedDials(
-    typeof savedFolderId === "string" ? savedFolderId : undefined
-  )
+  const loadInitialFolder = async () => {
+    const persistedFolderId = (await rememberLastFolder.getValue())
+      ? await lastOpenedFolderId.getValue()
+      : undefined
+    await getSpeedDials(
+      typeof savedFolderId === "string"
+        ? savedFolderId
+        : (persistedFolderId ?? undefined)
+    )
+  }
+  void loadInitialFolder()
     .catch((error) => {
       console.error("Unable to load speed dials", error)
     })
@@ -344,6 +360,18 @@ createEffect(() => {
     })
   bookmarkEventListeners()
   onCleanup(removeBookmarkEventListeners)
+  onCleanup(
+    rememberLastFolder.watch((enabled) => {
+      const folderId = currentFolder()?.id
+      const update =
+        enabled && folderId
+          ? lastOpenedFolderId.setValue(folderId)
+          : lastOpenedFolderId.removeValue()
+      void update.catch((error) =>
+        console.error("Unable to save last opened folder", error)
+      )
+    })
+  )
 
   const handleHistoryNavigation = (event: PopStateEvent) => {
     const folderId = event.state?.speedDialsFolderId
