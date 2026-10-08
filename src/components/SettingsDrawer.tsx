@@ -1,4 +1,10 @@
-import { InfoIcon, RotateCcwIcon, Undo2Icon, XIcon } from "lucide-solid"
+import {
+  FolderIcon,
+  InfoIcon,
+  RotateCcwIcon,
+  Undo2Icon,
+  XIcon,
+} from "lucide-solid"
 import { Button } from "~/components/ui/button"
 import { Drawer } from "~/components/ui/drawer"
 import { Text } from "~/components/ui/text"
@@ -23,6 +29,10 @@ import {
   toggleSettingsDrawer,
   DEFAULT_VALUES,
   speedDials,
+  folderPath,
+  currentFolder,
+  getFolderColumns,
+  setFolderColumns,
 } from "~/stores"
 import { ColorPicker, Divider, FileUpload } from "."
 import {
@@ -136,6 +146,27 @@ export const SettingsDrawer = () => {
   const defaultColumns = createMemo(() => {
     return getGridDimensions(speedDials.length).gridWidth
   })
+
+  const isInsideFolder = () => folderPath().length > 1
+  const layoutColumns = () =>
+    isInsideFolder()
+      ? getFolderColumns(currentFolder()?.id ?? "")
+      : currentGridColumns()
+  const [layoutError, setLayoutError] = createSignal("")
+  const saveColumns = async (columns?: number) => {
+    setLayoutError("")
+    try {
+      if (isInsideFolder()) {
+        const id = currentFolder()?.id
+        if (!id) return
+        await setFolderColumns(id, columns)
+      } else {
+        await gridColumns.setValue(columns)
+      }
+    } catch {
+      setLayoutError("Couldn't save the layout. Please try again.")
+    }
+  }
 
   const handleResetAll = async () => {
     await resetAllSettings()
@@ -264,18 +295,24 @@ export const SettingsDrawer = () => {
           <div>
             <SettingItemTitle
               title="Grid"
+              context={isInsideFolder() ? currentFolder()?.title : undefined}
               subTitle="Set the number of columns. Rows adjust automatically."
               showReset
-              onReset={() => resetSetting("gridColumns")}
+              onReset={() => void saveColumns(undefined)}
             />
             <NumberInput
               class="mt-4 max-w-40"
-              value={
-                currentGridColumns()?.toString() || defaultColumns()?.toString()
-              }
+              value={String(layoutColumns() ?? defaultColumns())}
               onValueChange={(e) => {
-                const value = Number.parseInt(e.value || "0")
-                if (value >= 1 && value <= 40) gridColumns.setValue(value)
+                const value = Number(e.value)
+                if (
+                  e.value.trim() &&
+                  Number.isInteger(value) &&
+                  value >= 1 &&
+                  value <= 40
+                ) {
+                  void saveColumns(value)
+                }
               }}
               min={1}
               max={40}
@@ -288,6 +325,11 @@ export const SettingsDrawer = () => {
                 <NumberInputIncrement />
               </NumberInputGroup>
             </NumberInput>
+            <Show when={layoutError()}>
+              <Text role="alert" size="sm">
+                {layoutError()}
+              </Text>
+            </Show>
           </div>
 
           <Divider />
@@ -480,6 +522,7 @@ export const SettingsDrawer = () => {
 
 const SettingItemTitle = (props: {
   title: string
+  context?: string
   subTitle?: string
   showReset?: boolean
   info?: string
@@ -487,10 +530,21 @@ const SettingItemTitle = (props: {
 }) => {
   return (
     <>
-      <div class="flex items-center gap-2">
+      <div class="flex min-w-0 items-center gap-2">
         <Text size="lg" class="font-bold">
           {props.title}
         </Text>
+
+        <Show when={props.context}>
+          <span
+            class="inline-flex min-w-0 max-w-[60%] items-center gap-1.5 rounded-md bg-foreground/6 px-2 py-0.5 text-xs font-medium text-muted-foreground"
+            title={`Folder: ${props.context}`}
+          >
+            <FolderIcon size={12} class="shrink-0" aria-hidden="true" />
+            <span class="sr-only">Folder: </span>
+            <span class="truncate">{props.context}</span>
+          </span>
+        </Show>
 
         <Show when={props.info}>
           <CustomTooltip

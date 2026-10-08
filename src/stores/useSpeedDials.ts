@@ -1,3 +1,4 @@
+import { removeFolderLayouts } from "./useFolderLayout"
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
 // import { notify } from '~/components/Toast'
@@ -278,7 +279,10 @@ const deleteSpeedDial = async (values?: SpeedDialValues) => {
       await browser.bookmarks.remove(id)
     } else {
       await browser.bookmarks.removeTree(id)
-      await removeFolderIcons(folderIds)
+      await Promise.all([
+        removeFolderIcons(folderIds),
+        removeFolderLayouts(folderIds),
+      ])
     }
   } catch (error) {
     // notify().error({ title: 'Error!!', description: error.message })

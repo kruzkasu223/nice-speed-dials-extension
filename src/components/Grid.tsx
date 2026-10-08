@@ -14,6 +14,8 @@ import {
   isSpeedDialsLoaded,
   folderPath,
   gridColumns,
+  currentFolder,
+  getFolderColumns,
   dialSize,
   dialRadius,
   showSpeedDialTitles,
@@ -81,10 +83,12 @@ export const Grid = () => {
     disableDragAndDrop.watch(setCurrentDisableDragDrop)
   })
 
-  // Custom columns only apply to the root speed-dials grid.
+  // Folders use automatic sizing unless they have their own override.
   const gridDimensions = () => {
     const customColumns =
-      folderPath().length > 1 ? undefined : currentGridColumns()
+      folderPath().length > 1
+        ? getFolderColumns(currentFolder()?.id ?? "")
+        : currentGridColumns()
     const { gridHeight: height, gridWidth: width } = getGridDimensions(
       speedDials.length,
       customColumns

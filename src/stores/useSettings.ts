@@ -1,3 +1,4 @@
+import { resetFolderLayouts } from "./useFolderLayout"
 import { createSignal } from "solid-js"
 import { storage } from "wxt/utils/storage"
 
@@ -95,6 +96,7 @@ export const toggleSettingsDrawer = storage.defineItem<boolean>(
 export const resetAllSettings = async () => {
   await Promise.all([
     gridColumns.setValue(DEFAULT_VALUES.gridColumns),
+    resetFolderLayouts(),
     dialSize.setValue(DEFAULT_VALUES.dialSize),
     dialRadius.setValue(DEFAULT_VALUES.dialRadius),
     showSpeedDialTitles.setValue(DEFAULT_VALUES.showSpeedDialTitles),
