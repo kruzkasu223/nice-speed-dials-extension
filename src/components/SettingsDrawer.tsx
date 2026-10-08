@@ -1,4 +1,4 @@
-import { InfoIcon, RotateCcwIcon, Undo2Icon } from "lucide-solid"
+import { InfoIcon, RotateCcwIcon, Undo2Icon, XIcon } from "lucide-solid"
 import { Button } from "~/components/ui/button"
 import { Drawer } from "~/components/ui/drawer"
 import { Text } from "~/components/ui/text"
@@ -156,8 +156,22 @@ export const SettingsDrawer = () => {
     >
       <Drawer.Content placement="right" variant="inset" draggable={false}>
         <Drawer.Header
+          class="pr-16"
           title="Settings"
           description="Choose how your new tab looks and works."
+        />
+        <Drawer.Close
+          asChild={(closeProps) => (
+            <Button
+              {...closeProps()}
+              aria-label="Close settings"
+              variant="ghost"
+              size="icon-lg"
+              class="absolute top-4 right-4"
+            >
+              <XIcon aria-hidden="true" />
+            </Button>
+          )}
         />
 
         <Drawer.Body>
