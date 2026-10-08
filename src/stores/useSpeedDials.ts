@@ -1,5 +1,11 @@
 import { removeFolderLayouts } from "./useFolderLayout"
-import { createEffect, createMemo, createSignal, onCleanup } from "solid-js"
+import {
+  batch,
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
+} from "solid-js"
 import { createStore } from "solid-js/store"
 // import { notify } from '~/components/Toast'
 import { getGridDimensions } from "~/utils"
@@ -123,9 +129,9 @@ const getFolderPath = async (folderId: string, root: BookmarkDataType) => {
 const refreshFolderTree = async (root: BookmarkDataType) => {
   try {
     const [tree] = await browser.bookmarks.getSubTree(root.id)
-    setFolderTree(tree ?? root)
+    return tree ?? root
   } catch {
-    setFolderTree(root)
+    return root
   }
 }
 
@@ -133,21 +139,28 @@ const loadSpeedDials = async (folderId?: string, recordNavigation = false) => {
   const previousFolderId = currentFolder()?.id
   const root = await getDefaultSpeedDialsFolder()
   const requestedFolderId = folderId ?? currentFolder()?.id ?? root.id
-  const nextPath = await getFolderPath(requestedFolderId, root)
-  const nextFolder = nextPath.at(-1) ?? root
-
-  setCurrentFolder(nextFolder)
-  setFolderPath(nextPath)
-  await refreshFolderTree(root)
+  let nextPath = await getFolderPath(requestedFolderId, root)
+  let nextFolder = nextPath.at(-1) ?? root
+  const treePromise = refreshFolderTree(root)
+  let children: BookmarkDataType[]
 
   try {
-    const children = await browser.bookmarks.getChildren(nextFolder.id)
-    setSpeedDials(children)
+    children = await browser.bookmarks.getChildren(nextFolder.id)
   } catch {
-    setCurrentFolder(root)
-    setFolderPath([root])
-    setSpeedDials(await browser.bookmarks.getChildren(root.id))
+    nextFolder = root
+    nextPath = [root]
+    children = await browser.bookmarks.getChildren(root.id)
   }
+
+  const nextTree = await treePromise
+  // Publish a complete view at once: old items must never use the new
+  // folder's columns or appear underneath its breadcrumb while loading.
+  batch(() => {
+    setCurrentFolder(nextFolder)
+    setFolderPath(nextPath)
+    setFolderTree(nextTree)
+    setSpeedDials(children)
+  })
 
   const resolvedFolderId = currentFolder()?.id
   if (
