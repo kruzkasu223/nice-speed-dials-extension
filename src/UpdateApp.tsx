@@ -59,7 +59,7 @@ export const UpdateApp = () => {
   })
 
   return (
-    <div class="min-h-screen w-full bg-(--app-background-color,#2c2124) bg-no-repeat p-4 text-foreground [background-image:var(--app-background-image,none)] bg-position-(--app-background-position,auto) bg-size-(--app-background-size,auto) sm:p-8">
+    <div class="min-h-screen w-full bg-(--app-background-color,var(--background)) bg-no-repeat p-4 text-foreground [background-image:var(--app-background-image,none)] bg-position-(--app-background-position,auto) bg-size-(--app-background-size,auto) sm:p-8">
       <main class="mx-auto w-full max-w-3xl">
         <header class="border-b border-border pb-8 sm:pb-10">
           <p class="mb-3 font-medium text-primary text-sm">NICE SPEED DIALS</p>

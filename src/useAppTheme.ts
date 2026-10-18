@@ -38,7 +38,9 @@ export const useAppTheme = (options: AppThemeOptions = {}) => {
         ? "transparent"
         : useCustomBackground
           ? bgColor() || DEFAULT_VALUES.mainBackgroundColor
-          : DEFAULT_VALUES.mainBackgroundColor
+          : isDarkMode()
+            ? DEFAULT_VALUES.mainBackgroundColor
+            : "color-mix(in srgb, var(--primary) 8%, var(--background))"
     )
     document.documentElement.style.setProperty(
       "--app-background-image",
