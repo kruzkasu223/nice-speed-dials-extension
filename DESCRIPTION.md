@@ -3,9 +3,8 @@
 ### A fast, calm, and customizable new-tab page powered by your browser bookmarks.
 
 [Visit Chrome Web Store](https://chrome.google.com/webstore/detail/nice-speed-dials/igdancpfkcmgelecddchfeijbofdcnaa)
-
-<!-- [Visit Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/nice-speed-dials/) -->
-<!-- [Visit Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/nice-speed-dials/ipdcfhnakfnmchdkpboeakmijafmgnjm) -->
+[Visit Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/nice-speed-dials/)
+[Visit Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/nice-speed-dials/bficopaolgfhkccfcnmfphkmnacekbil)
 
 Nice Speed Dials is a browser extension With a sleek and intuitive interface
 that allows you to organize your browser's new tab page with your favourite

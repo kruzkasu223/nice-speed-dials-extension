@@ -13,7 +13,7 @@ import { Text } from "~/components/ui/text"
 const REVIEW_URLS = {
   chrome:
     "https://chromewebstore.google.com/detail/nice-speed-dials/igdancpfkcmgelecddchfeijbofdcnaa/reviews",
-  edge: "https://microsoftedge.microsoft.com/addons/detail/nice-speed-dials/ipdcfhnakfnmchdkpboeakmijafmgnjm",
+  edge: "https://microsoftedge.microsoft.com/addons/detail/nice-speed-dials/bficopaolgfhkccfcnmfphkmnacekbil",
   firefox:
     "https://addons.mozilla.org/en-US/firefox/addon/nice-speed-dials/reviews/",
 } as const
@@ -31,10 +31,8 @@ export const AppreciationActions = (props: {
   }
 
   const openReviewPage = async () => {
-    return openExternalPage(REVIEW_URLS.chrome)
-    // TODO: in next version
-    // const browserName = import.meta.env.BROWSER as keyof typeof REVIEW_URLS
-    // await openExternalPage(REVIEW_URLS[browserName] ?? REVIEW_URLS.chrome)
+    const browserName = import.meta.env.BROWSER as keyof typeof REVIEW_URLS
+    await openExternalPage(REVIEW_URLS[browserName] ?? REVIEW_URLS.chrome)
   }
 
   const openSupportPage = async () => {
