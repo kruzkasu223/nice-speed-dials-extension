@@ -1,6 +1,7 @@
-import { For, onMount, Show, type JSX } from "solid-js"
+import { createSignal, For, onMount, Show, type JSX } from "solid-js"
 import changelog from "../CHANGELOG.md?raw"
 import { AppreciationActions } from "~/components/AppreciationActions"
+import { prepareReleaseVideos } from "~/utils/prepareReleaseVideos"
 
 type ChangelogSection = { title: string; entries: string[] }
 
@@ -58,9 +59,15 @@ const releaseVideos: Record<string, string> = {
 
 export const UpdateApp = () => {
   const latestRelease = releases[0]
+  const [videosReady, setVideosReady] = createSignal(false)
 
   onMount(() => {
     document.title = "Release notes | Nice Speed Dials"
+    prepareReleaseVideos()
+      .then(() => setVideosReady(true))
+      .catch((error) =>
+        console.error("Could not prepare release videos", error)
+      )
   })
 
   return (
@@ -117,15 +124,17 @@ export const UpdateApp = () => {
                   >
                     {(videoId) => (
                       <div class="mt-6">
-                        <iframe
-                          class="aspect-video w-full rounded-xl border-0"
-                          src={`https://www.youtube-nocookie.com/embed/${videoId()}`}
-                          title={`${release.version} video overview`}
-                          loading="lazy"
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowfullscreen
-                        />
+                        <Show when={videosReady()}>
+                          <iframe
+                            class="aspect-video w-full rounded-xl border-0"
+                            src={`https://www.youtube-nocookie.com/embed/${videoId()}`}
+                            title={`${release.version} video overview`}
+                            loading="lazy"
+                            referrerPolicy="strict-origin-when-cross-origin"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen
+                          />
+                        </Show>
                         <a
                           class="mt-2 inline-block text-primary text-sm underline underline-offset-4"
                           href={`https://www.youtube.com/watch?v=${videoId()}`}
