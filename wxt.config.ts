@@ -1,6 +1,5 @@
 import tailwindcss from "@tailwindcss/vite"
 import { defineConfig } from "wxt"
-import solid from "vite-plugin-solid"
 
 export default defineConfig({
   imports: false,
@@ -19,7 +18,7 @@ export default defineConfig({
     ],
   },
   vite: () => ({
-    plugins: [tailwindcss(), solid()],
+    plugins: [tailwindcss()],
     build: { chunkSizeWarningLimit: 1000 },
   }),
   manifest: (env) => ({

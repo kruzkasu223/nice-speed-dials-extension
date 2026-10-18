@@ -1,4 +1,4 @@
-import { Show, createSignal, onMount } from "solid-js"
+import { Show } from "solid-js"
 import { Text } from "~/components/ui/text"
 import {
   Tooltip,
@@ -10,10 +10,10 @@ import {
   getFolderIcon,
   DEFAULT_VALUES,
   type ModalTypes,
-  openLinksInNewTab,
 } from "~/stores"
 import { getFaviconUrl } from "~/utils"
-import { ContextMenu, FolderIconGlyph } from "./"
+import { ContextMenu } from "./ContextMenu"
+import { FolderIconGlyph } from "./FolderIconGlyph"
 
 interface P {
   item: BookmarkDataType
@@ -22,6 +22,7 @@ interface P {
   openFolder: (folder: BookmarkDataType) => void
   showTitle: boolean
   textSize: number
+  openInNewTab: boolean
 }
 
 const gridItemActionClass =
@@ -31,16 +32,7 @@ const gridItemImageClass =
   "pointer-events-none h-full w-full select-none object-contain"
 
 export const GridItem = (props: P) => {
-  const [target, setTarget] = createSignal<"_blank" | "_self">("_self")
-
-  onMount(async () => {
-    const openInNewTab = await openLinksInNewTab.getValue()
-    setTarget(openInNewTab ? "_blank" : "_self")
-
-    openLinksInNewTab.watch((value: boolean) => {
-      setTarget(value ? "_blank" : "_self")
-    })
-  })
+  const target = () => (props.openInNewTab ? "_blank" : "_self")
 
   const itemContent = () => (
     <div class="flex h-full w-full flex-col items-center justify-evenly">

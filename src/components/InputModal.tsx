@@ -1,4 +1,4 @@
-import { createEffect, createSignal, Show } from "solid-js"
+import { createEffect, createSignal, lazy, Show, Suspense } from "solid-js"
 import { Button } from "~/components/ui/button"
 import { Dialog } from "~/components/ui/dialog"
 import {
@@ -27,7 +27,7 @@ import {
   setIsModalOpen,
 } from "~/stores"
 import { FolderSelector } from "./FolderSelector"
-import { IconSelector } from "./IconSelector"
+const IconSelector = lazy(() => import("./IconSelector"))
 
 export const InputModal = () => {
   let titleInputRef: HTMLInputElement | undefined
@@ -228,10 +228,12 @@ export const InputModal = () => {
                       )}
                     </Show>
                     <Show when={modalItemKind() === "folder"}>
-                      <IconSelector
-                        value={modalData()?.icon}
-                        onChange={setModalFolderIcon}
-                      />
+                      <Suspense>
+                        <IconSelector
+                          value={modalData()?.icon}
+                          onChange={setModalFolderIcon}
+                        />
+                      </Suspense>
                     </Show>
                   </FieldGroup>
                 </>

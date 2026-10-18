@@ -1,7 +1,16 @@
 import { FolderOpenIcon, PlusIcon, SettingsIcon } from "lucide-solid"
 // @ts-expect-error ts(2307)
 import { dndzone } from "solid-dnd-directive"
-import { For, createSignal, createEffect, onMount, Show } from "solid-js"
+import {
+  For,
+  createSignal,
+  createEffect,
+  createMemo,
+  onCleanup,
+  lazy,
+  Show,
+  Suspense,
+} from "solid-js"
 import {
   type BookmarkDataType,
   duplicateSpeedDial,
@@ -22,75 +31,87 @@ import {
   dialTextSize,
   showAddNewButton,
   showSettingsButton,
-  showHelpButton,
   disableDragAndDrop,
   DEFAULT_VALUES,
+  openLinksInNewTab,
+  isModalOpen,
+  isSettingDrawerOpen,
+  toggleSettingsDrawer,
 } from "~/stores"
-import { GridItem, InputModal, SettingsDrawer } from "./"
+import { GridItem } from "./GridItem"
+import { createStoredSignal } from "~/utils/createStoredSignal"
 import { getGridDimensions } from "~/utils"
 import { CustomTooltip } from "./CustomTooltip"
 import { Button } from "./ui/button"
 import { Text } from "./ui/text"
 import { FolderBreadcrumb } from "./FolderBreadcrumb"
 
+const InputModal = lazy(() =>
+  import("./InputModal").then((m) => ({ default: m.InputModal }))
+)
+const SettingsDrawer = lazy(() =>
+  import("./SettingsDrawer").then((m) => ({ default: m.SettingsDrawer }))
+)
+
 export const Grid = () => {
   dndzone
 
-  const [currentGridColumns, setCurrentGridColumns] = createSignal<
-    number | undefined
-  >(DEFAULT_VALUES.gridColumns)
-  const [currentDialSize, setCurrentDialSize] = createSignal(
+  const [currentGridColumns] = createStoredSignal(
+    gridColumns,
+    DEFAULT_VALUES.gridColumns
+  )
+  const [currentDialSize] = createStoredSignal(
+    dialSize,
     DEFAULT_VALUES.dialSize
   )
-  const [currentDialRadius, setCurrentDialRadius] = createSignal(
+  const [currentDialRadius] = createStoredSignal(
+    dialRadius,
     DEFAULT_VALUES.dialRadius
   )
-  const [currentDialTextSize, setCurrentDialTextSize] = createSignal(
+  const [currentDialTextSize] = createStoredSignal(
+    dialTextSize,
     DEFAULT_VALUES.dialTextSize
   )
-  const [currentShowSpeedDialTitles, setCurrentShowSpeedDialTitles] =
-    createSignal(DEFAULT_VALUES.showSpeedDialTitles)
-  const [currentShowAddNew, setCurrentShowAddNew] = createSignal(
+  const [currentShowSpeedDialTitles] = createStoredSignal(
+    showSpeedDialTitles,
+    DEFAULT_VALUES.showSpeedDialTitles
+  )
+  const [currentShowAddNew] = createStoredSignal(
+    showAddNewButton,
     DEFAULT_VALUES.showAddNewButton
   )
-  const [currentShowSettings, setCurrentShowSettings] = createSignal(
+  const [currentShowSettings] = createStoredSignal(
+    showSettingsButton,
     DEFAULT_VALUES.showSettingsButton
   )
-  const [currentShowHelp, setCurrentShowHelp] = createSignal(
-    DEFAULT_VALUES.showHelpButton
-  )
-  const [currentDisableDragDrop, setCurrentDisableDragDrop] = createSignal(
+  const [currentDisableDragDrop] = createStoredSignal(
+    disableDragAndDrop,
     DEFAULT_VALUES.disableDragAndDrop
   )
+  const [currentOpenLinksNewTab] = createStoredSignal(
+    openLinksInNewTab,
+    DEFAULT_VALUES.openLinksInNewTab
+  )
 
-  // Load settings on mount
-  onMount(async () => {
-    setCurrentGridColumns((await gridColumns.getValue()) ?? undefined)
-    setCurrentDialSize(await dialSize.getValue())
-    setCurrentDialRadius(await dialRadius.getValue())
-    setCurrentShowSpeedDialTitles(await showSpeedDialTitles.getValue())
-    setCurrentDialTextSize(await dialTextSize.getValue())
-    setCurrentShowAddNew(await showAddNewButton.getValue())
-    setCurrentShowSettings(await showSettingsButton.getValue())
-    setCurrentShowHelp(await showHelpButton.getValue())
-    setCurrentDisableDragDrop(await disableDragAndDrop.getValue())
-
-    // Watch for changes
-    // WXT emits null when an optional storage item is removed. Normalize it to
-    // undefined so the grid falls back to its automatically calculated width.
-    gridColumns.watch((value) => setCurrentGridColumns(value ?? undefined))
-    dialSize.watch(setCurrentDialSize)
-    dialRadius.watch(setCurrentDialRadius)
-    showSpeedDialTitles.watch(setCurrentShowSpeedDialTitles)
-    dialTextSize.watch(setCurrentDialTextSize)
-    showAddNewButton.watch(setCurrentShowAddNew)
-    showSettingsButton.watch(setCurrentShowSettings)
-    showHelpButton.watch(setCurrentShowHelp)
-    disableDragAndDrop.watch(setCurrentDisableDragDrop)
+  // Keep these mounted after first use so their exit animations and focus restore run.
+  const [modalMounted, setModalMounted] = createSignal(false)
+  const [settingsMounted, setSettingsMounted] = createSignal(false)
+  createEffect(() => {
+    if (isModalOpen()) setModalMounted(true)
   })
+  createEffect(() => {
+    if (isSettingDrawerOpen()) setSettingsMounted(true)
+  })
+  onCleanup(
+    toggleSettingsDrawer.watch((value) => {
+      if (!value) return
+      setIsSettingDrawerOpen((open) => !open)
+      void toggleSettingsDrawer.setValue(false).catch(console.error)
+    })
+  )
 
   // Folders use automatic sizing unless they have their own override.
-  const gridDimensions = () => {
+  const gridDimensions = createMemo(() => {
     const customColumns =
       folderPath().length > 1
         ? getFolderColumns(currentFolder()?.id ?? "")
@@ -100,7 +121,7 @@ export const Grid = () => {
       customColumns
     )
     return { height, width }
-  }
+  })
 
   // Apply dial size and radius to CSS variables
   createEffect(() => {
@@ -148,8 +169,14 @@ export const Grid = () => {
 
   return (
     <>
-      <InputModal />
-      <SettingsDrawer />
+      <Suspense>
+        <Show when={modalMounted()}>
+          <InputModal />
+        </Show>
+        <Show when={settingsMounted()}>
+          <SettingsDrawer />
+        </Show>
+      </Suspense>
 
       <div class="flex w-full min-w-0 items-start justify-between gap-3">
         <FolderBreadcrumb />
@@ -251,6 +278,7 @@ export const Grid = () => {
                   openFolder={openFolder}
                   showTitle={currentShowSpeedDialTitles()}
                   textSize={currentDialTextSize()}
+                  openInNewTab={currentOpenLinksNewTab()}
                 />
               )}
             </For>

@@ -2,8 +2,6 @@ export const getGridDimensions = (
   listLength: number,
   customColumns?: number
 ) => {
-  const grid: any[] = [[]]
-
   let gridWidth: number
   let gridHeight: number
 
@@ -21,12 +19,5 @@ export const getGridDimensions = (
     gridHeight = Math.max(1, Math.ceil(listLength / gridWidth))
   }
 
-  for (let i = 0; i < gridHeight; i++) {
-    grid.push([])
-    for (let j = 0; j < gridWidth; j++) {
-      grid[i].push(null)
-    }
-  }
-
-  return { grid, gridWidth, gridHeight }
+  return { gridWidth, gridHeight }
 }

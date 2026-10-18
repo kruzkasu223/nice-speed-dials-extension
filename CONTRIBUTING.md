@@ -92,13 +92,17 @@ Before submitting a pull request, run:
 
 ```sh
 yarn prettier --check <changed-files>
-yarn tsc --noEmit
+yarn typecheck
+yarn test
 yarn build
 yarn build:firefox
 ```
 
-There is not yet an automated test suite, so manually test the behavior your
-change affects. Depending on the change, verify that:
+The Node test suite requires Node.js 22.18+ (native TypeScript support) and
+covers refresh batching, storage subscription cleanup, and grid sizing. See
+[tests/README.md](tests/README.md) for the isolated browser regression checks.
+Also manually test the behavior your change affects. Depending on the change,
+verify that:
 
 - The new-tab page loads without console errors.
 - Speed dials and folders can be created, edited, duplicated, moved, and deleted

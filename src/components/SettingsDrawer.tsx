@@ -18,7 +18,6 @@ import {
   dialTextSize,
   showAddNewButton,
   showSettingsButton,
-  showHelpButton,
   openLinksInNewTab,
   rememberLastFolder,
   disableDragAndDrop,
@@ -27,7 +26,6 @@ import {
   mainBackgroundImage,
   resetAllSettings,
   resetSetting,
-  toggleSettingsDrawer,
   DEFAULT_VALUES,
   speedDials,
   folderPath,
@@ -35,7 +33,10 @@ import {
   getFolderColumns,
   setFolderColumns,
 } from "~/stores"
-import { ColorPicker, Divider, FileUpload } from "."
+import { ColorPicker } from "./ColorPicker"
+import { Divider } from "./Divider"
+import { FileUpload } from "./FileUpload"
+import { createStoredSignal } from "~/utils/createStoredSignal"
 import {
   NumberInput,
   NumberInputDecrement,
@@ -45,7 +46,7 @@ import {
   NumberInputScrubber,
 } from "~/components/ui/number-input"
 import { Switch } from "~/components/ui/switch"
-import { Show, createSignal, onMount, createMemo } from "solid-js"
+import { Show, createSignal, createMemo } from "solid-js"
 import { Slider } from "~/components/ui/slider"
 import { getGridDimensions } from "~/utils"
 import { AppreciationActions } from "./AppreciationActions"
@@ -76,89 +77,58 @@ const TEXT_SIZES = [
 ] as const
 
 export const SettingsDrawer = () => {
-  // Reactive signals for settings
-  const [currentGridColumns, setCurrentGridColumns] = createSignal<
-    number | undefined
-  >(DEFAULT_VALUES.gridColumns)
-  const [currentDialSize, setCurrentDialSize] = createSignal(
+  const [currentGridColumns] = createStoredSignal(
+    gridColumns,
+    DEFAULT_VALUES.gridColumns
+  )
+  const [currentDialSize] = createStoredSignal(
+    dialSize,
     DEFAULT_VALUES.dialSize
   )
-  const [currentDialRadius, setCurrentDialRadius] = createSignal(
+  const [currentDialRadius] = createStoredSignal(
+    dialRadius,
     DEFAULT_VALUES.dialRadius
   )
-  const [currentDialTextSize, setCurrentDialTextSize] = createSignal(
+  const [currentDialTextSize] = createStoredSignal(
+    dialTextSize,
     DEFAULT_VALUES.dialTextSize
   )
-  const [currentShowSpeedDialTitles, setCurrentShowSpeedDialTitles] =
-    createSignal(DEFAULT_VALUES.showSpeedDialTitles)
-  const [currentShowAddNew, setCurrentShowAddNew] = createSignal(
+  const [currentShowSpeedDialTitles] = createStoredSignal(
+    showSpeedDialTitles,
+    DEFAULT_VALUES.showSpeedDialTitles
+  )
+  const [currentShowAddNew] = createStoredSignal(
+    showAddNewButton,
     DEFAULT_VALUES.showAddNewButton
   )
-  const [currentShowSettings, setCurrentShowSettings] = createSignal(
+  const [currentShowSettings] = createStoredSignal(
+    showSettingsButton,
     DEFAULT_VALUES.showSettingsButton
   )
-  const [currentShowHelp, setCurrentShowHelp] = createSignal(
-    DEFAULT_VALUES.showHelpButton
-  )
-  const [currentOpenLinksNewTab, setCurrentOpenLinksNewTab] = createSignal(
-    DEFAULT_VALUES.openLinksInNewTab
-  )
-  const [currentRememberLastFolder, setCurrentRememberLastFolder] =
-    createSignal(DEFAULT_VALUES.rememberLastFolder)
-  const [currentDisableDragDrop, setCurrentDisableDragDrop] = createSignal(
+  const [currentDisableDragDrop] = createStoredSignal(
+    disableDragAndDrop,
     DEFAULT_VALUES.disableDragAndDrop
   )
-  const [currentDarkMode, setCurrentDarkMode] = createSignal(
+  const [currentOpenLinksNewTab] = createStoredSignal(
+    openLinksInNewTab,
+    DEFAULT_VALUES.openLinksInNewTab
+  )
+  const [currentRememberLastFolder] = createStoredSignal(
+    rememberLastFolder,
+    DEFAULT_VALUES.rememberLastFolder
+  )
+  const [currentDarkMode] = createStoredSignal(
+    darkMode,
     DEFAULT_VALUES.darkMode
   )
-  const [currentBgColor, setCurrentBgColor] = createSignal(
+  const [currentBgColor, setCurrentBgColor] = createStoredSignal(
+    mainBackgroundColor,
     DEFAULT_VALUES.mainBackgroundColor
   )
-  const [currentBgImage, setCurrentBgImage] = createSignal<string | undefined>(
+  const [currentBgImage, setCurrentBgImage] = createStoredSignal(
+    mainBackgroundImage,
     DEFAULT_VALUES.mainBackgroundImage
   )
-
-  // Load settings on mount
-  onMount(async () => {
-    setCurrentGridColumns((await gridColumns.getValue()) ?? undefined)
-    setCurrentDialSize(await dialSize.getValue())
-    setCurrentDialRadius(await dialRadius.getValue())
-    setCurrentShowSpeedDialTitles(await showSpeedDialTitles.getValue())
-    setCurrentDialTextSize(await dialTextSize.getValue())
-    setCurrentShowAddNew(await showAddNewButton.getValue())
-    setCurrentShowSettings(await showSettingsButton.getValue())
-    setCurrentShowHelp(await showHelpButton.getValue())
-    setCurrentOpenLinksNewTab(await openLinksInNewTab.getValue())
-    setCurrentRememberLastFolder(await rememberLastFolder.getValue())
-    setCurrentDisableDragDrop(await disableDragAndDrop.getValue())
-    setCurrentDarkMode(await darkMode.getValue())
-    setCurrentBgColor(await mainBackgroundColor.getValue())
-    setCurrentBgImage(await mainBackgroundImage.getValue())
-
-    // Watch for changes
-    gridColumns.watch((value) => setCurrentGridColumns(value ?? undefined))
-    dialSize.watch(setCurrentDialSize)
-    dialRadius.watch(setCurrentDialRadius)
-    showSpeedDialTitles.watch(setCurrentShowSpeedDialTitles)
-    dialTextSize.watch(setCurrentDialTextSize)
-    showAddNewButton.watch(setCurrentShowAddNew)
-    showSettingsButton.watch(setCurrentShowSettings)
-    showHelpButton.watch(setCurrentShowHelp)
-    openLinksInNewTab.watch(setCurrentOpenLinksNewTab)
-    rememberLastFolder.watch(setCurrentRememberLastFolder)
-    disableDragAndDrop.watch(setCurrentDisableDragDrop)
-    darkMode.watch(setCurrentDarkMode)
-    mainBackgroundColor.watch(setCurrentBgColor)
-    mainBackgroundImage.watch(setCurrentBgImage)
-
-    // Watch for toggle settings drawer
-    toggleSettingsDrawer.watch(async (value) => {
-      if (value) {
-        setIsSettingDrawerOpen(!isSettingDrawerOpen())
-        await toggleSettingsDrawer.setValue(false)
-      }
-    })
-  })
 
   // Calculate default columns when no custom value is set
   const defaultColumns = createMemo(() => {
@@ -204,6 +174,8 @@ export const SettingsDrawer = () => {
 
   return (
     <Drawer.Root
+      lazyMount
+      unmountOnExit
       open={isSettingDrawerOpen()}
       onOpenChange={(e) => setIsSettingDrawerOpen(e.open)}
       swipeDirection="end"

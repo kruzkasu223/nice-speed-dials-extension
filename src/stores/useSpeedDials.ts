@@ -7,9 +7,10 @@ import {
   createSignal,
   onCleanup,
 } from "solid-js"
-import { createStore } from "solid-js/store"
+import { createStore, reconcile } from "solid-js/store"
 // import { notify } from '~/components/Toast'
 import { getGridDimensions } from "~/utils"
+import { createRefreshScheduler } from "~/utils/createRefreshScheduler"
 import { type Browser, browser } from "wxt/browser"
 import { lastOpenedFolderId, rememberLastFolder } from "./useSettings"
 import {
@@ -27,7 +28,7 @@ const BOOKMARK_EVENTS = [
   "onMoved",
   "onRemoved",
   ...(import.meta.env.BROWSER !== "firefox"
-    ? (["onChildrenReordered", "onImportBegan", "onImportEnded"] as const)
+    ? (["onChildrenReordered"] as const)
     : ([] as const)),
 ] as const
 
@@ -80,64 +81,60 @@ const getDefaultSpeedDialsFolder = async () => {
   return folder
 }
 
-const getFolderPath = async (folderId: string, root: BookmarkDataType) => {
-  const path: BookmarkDataType[] = []
-  const visitedIds = new Set<string>()
-  let nextId: string | undefined = folderId
+let treeVersion = 0
+let loadedTreeVersion = -1
+let folderIndex = new Map<string, BookmarkDataType>()
 
-  try {
-    while (nextId && !visitedIds.has(nextId)) {
-      visitedIds.add(nextId)
-      const folders: BookmarkDataType[] = await browser.bookmarks.get(nextId)
-      const folder: BookmarkDataType | undefined = folders[0]
-
-      if (!folder || folder.url) break
-
-      path.unshift(folder)
-      if (folder.id === root.id) return path
-      nextId = folder.parentId
+const getFolderSnapshot = async () => {
+  if (folderTree() && loadedTreeVersion === treeVersion) return folderTree()!
+  const version = treeVersion
+  const root = await getDefaultSpeedDialsFolder()
+  const [tree] = await browser.bookmarks.getSubTree(root.id)
+  if (!tree) throw new Error("Speed dials folder was not found")
+  const index = new Map<string, BookmarkDataType>()
+  const pending = [tree]
+  while (pending.length) {
+    const node = pending.pop()!
+    if (node.url) continue
+    index.set(node.id, node)
+    for (const child of node.children ?? []) {
+      if (!child.url) pending.push(child)
     }
-  } catch {
-    // The folder or one of its ancestors may have been removed externally.
   }
-
-  return [root]
+  folderIndex = index
+  loadedTreeVersion = version
+  return tree
 }
 
-const refreshFolderTree = async (root: BookmarkDataType) => {
-  try {
-    const [tree] = await browser.bookmarks.getSubTree(root.id)
-    return tree ?? root
-  } catch {
-    return root
+const getFolderPath = (folderId: string, root: BookmarkDataType) => {
+  const path: BookmarkDataType[] = []
+  let folder = folderIndex.get(folderId)
+  while (folder) {
+    path.push(folder)
+    if (folder.id === root.id) return path.reverse()
+    folder = folder.parentId ? folderIndex.get(folder.parentId) : undefined
   }
+  return [root]
 }
 
 const loadSpeedDials = async (folderId?: string, recordNavigation = false) => {
   const previousFolderId = currentFolder()?.id
-  const root = await getDefaultSpeedDialsFolder()
-  const requestedFolderId = folderId ?? currentFolder()?.id ?? root.id
-  let nextPath = await getFolderPath(requestedFolderId, root)
-  let nextFolder = nextPath.at(-1) ?? root
-  const treePromise = refreshFolderTree(root)
-  let children: BookmarkDataType[]
+  const nextTree = await getFolderSnapshot()
+  const requestedFolderId = folderId ?? currentFolder()?.id ?? nextTree.id
+  const nextPath = getFolderPath(requestedFolderId, nextTree)
+  const nextFolder = nextPath.at(-1) ?? nextTree
+  // The drag-and-drop store mutates its objects; keep the cached tree immutable.
+  const children = (nextFolder.children ?? []).map(
+    ({ children, ...item }) => item
+  )
 
-  try {
-    children = await browser.bookmarks.getChildren(nextFolder.id)
-  } catch {
-    nextFolder = root
-    nextPath = [root]
-    children = await browser.bookmarks.getChildren(root.id)
-  }
-
-  const nextTree = await treePromise
   // Publish a complete view at once: old items must never use the new
   // folder's columns or appear underneath its breadcrumb while loading.
   batch(() => {
     setCurrentFolder(nextFolder)
     setFolderPath(nextPath)
     setFolderTree(nextTree)
-    setSpeedDials(children)
+    setSpeedDials(reconcile(children, { key: "id" }))
   })
 
   const resolvedFolderId = currentFolder()?.id
@@ -188,19 +185,40 @@ const navigateToParentFolder = async () => {
   if (parent) await navigateToFolder(parent.id)
 }
 
+const bookmarkRefresh = createRefreshScheduler(
+  () => getSpeedDials(),
+  (error) => console.error("Unable to refresh speed dials", error)
+)
 const handleBookmarkChange = () => {
-  void getSpeedDials()
+  treeVersion++
+  bookmarkRefresh.request()
+}
+const handleImportBegan = () => bookmarkRefresh.pause()
+const handleImportEnded = () => {
+  handleBookmarkChange()
+  bookmarkRefresh.resume()
 }
 
-const bookmarkEventListeners = () =>
+const bookmarkEventListeners = () => {
   BOOKMARK_EVENTS.forEach((event) =>
     browser.bookmarks[event].addListener(handleBookmarkChange)
   )
+  if (import.meta.env.BROWSER !== "firefox") {
+    browser.bookmarks.onImportBegan.addListener(handleImportBegan)
+    browser.bookmarks.onImportEnded.addListener(handleImportEnded)
+  }
+}
 
-const removeBookmarkEventListeners = () =>
+const removeBookmarkEventListeners = () => {
   BOOKMARK_EVENTS.forEach((event) =>
     browser.bookmarks[event].removeListener(handleBookmarkChange)
   )
+  if (import.meta.env.BROWSER !== "firefox") {
+    browser.bookmarks.onImportBegan.removeListener(handleImportBegan)
+    browser.bookmarks.onImportEnded.removeListener(handleImportEnded)
+  }
+  bookmarkRefresh.dispose()
+}
 
 const addNewSpeedDial = async (values?: SpeedDialValues, parentId?: string) => {
   const title = values?.title?.trim()
@@ -294,8 +312,7 @@ const copyBookmarkTree = async (
 
   if (!source.url) {
     await setFolderIcon(copy.id, getFolderIcon(source.id))
-    const children = await browser.bookmarks.getChildren(source.id)
-    for (const child of children) {
+    for (const child of source.children ?? []) {
       await copyBookmarkTree(child, copy.id)
     }
   }
@@ -309,14 +326,16 @@ const duplicateSpeedDial = async (values?: Partial<BookmarkDataType>) => {
   const root = await getDefaultSpeedDialsFolder()
   const destinationId = values.parentId ?? currentFolder()?.id ?? root.id
 
+  bookmarkRefresh.pause()
   try {
-    const [source] = await browser.bookmarks.get(values.id)
+    const [source] = await browser.bookmarks.getSubTree(values.id)
     if (source) {
       await copyBookmarkTree(source, destinationId, `${source.title} (copy)`)
     }
   } catch (error) {
-    // notify().error({ title: 'Error!!', description: error.message })
     console.error("Unable to duplicate speed dial", error)
+  } finally {
+    bookmarkRefresh.resume()
   }
 }
 

@@ -21,6 +21,8 @@
   "type": "module",
   "scripts": {
     "prepare": "wxt prepare",
+    "test": "node --conditions=browser --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit",
     "dev": "wxt --mv3",
     "dev:firefox": "wxt -b firefox --mv3",
     "build": "wxt build --mv3",

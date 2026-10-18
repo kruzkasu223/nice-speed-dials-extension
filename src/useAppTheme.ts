@@ -1,31 +1,29 @@
-import { createEffect, createSignal, onMount } from "solid-js"
+import { createEffect } from "solid-js"
 import {
   darkMode,
   DEFAULT_VALUES,
   mainBackgroundColor,
   mainBackgroundImage,
-} from "~/stores"
+} from "~/stores/useSettings"
+import { createStoredSignal } from "~/utils/createStoredSignal"
 
 type AppThemeOptions = { useCustomBackground?: boolean }
 
 export const useAppTheme = (options: AppThemeOptions = {}) => {
   const useCustomBackground = options.useCustomBackground ?? true
-  const [isDarkMode, setIsDarkMode] = createSignal(false)
-  const [bgColor, setBgColor] = createSignal<string | undefined>(undefined)
-  const [bgImage, setBgImage] = createSignal<string | undefined>(undefined)
-
-  onMount(async () => {
-    setIsDarkMode(await darkMode.getValue())
-    if (useCustomBackground) {
-      setBgColor((await mainBackgroundColor.getValue()) || undefined)
-      setBgImage((await mainBackgroundImage.getValue()) || undefined)
-
-      mainBackgroundColor.watch(setBgColor)
-      mainBackgroundImage.watch(setBgImage)
-    }
-
-    darkMode.watch(setIsDarkMode)
-  })
+  const [isDarkMode] = createStoredSignal(darkMode, DEFAULT_VALUES.darkMode)
+  const [bgColor] = useCustomBackground
+    ? createStoredSignal(
+        mainBackgroundColor,
+        DEFAULT_VALUES.mainBackgroundColor
+      )
+    : [() => undefined]
+  const [bgImage] = useCustomBackground
+    ? createStoredSignal(
+        mainBackgroundImage,
+        DEFAULT_VALUES.mainBackgroundImage
+      )
+    : [() => undefined]
 
   createEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode())

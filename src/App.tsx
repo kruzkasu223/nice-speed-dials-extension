@@ -1,4 +1,4 @@
-import { Grid } from "~/components"
+import { Grid } from "~/components/Grid"
 import { useAppTheme } from "~/useAppTheme"
 
 export const App = () => {

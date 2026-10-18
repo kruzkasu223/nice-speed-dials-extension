@@ -1,14 +1,11 @@
-import { SearchIcon, icons } from "lucide-solid"
+import { SearchIcon } from "lucide-solid"
+import { icons } from "~/utils/folderIconCatalog"
 import { For, Show, createEffect, createMemo, createSignal } from "solid-js"
 import { Input } from "~/components/ui/input"
 import { Button } from "~/components/ui/button"
 import { DEFAULT_FOLDER_ICON } from "~/stores"
 import { cn } from "~/utils/cn"
-import {
-  FolderIconGlyph,
-  isLucideIconName,
-  type LucideIconName,
-} from "./FolderIconGlyph"
+import { FolderIconGlyph, type LucideIconName } from "./FolderIconGlyph"
 
 type IconSelectorProps = {
   value?: string
@@ -36,7 +33,9 @@ export const IconSelector = (props: IconSelectorProps) => {
   const [visibleCount, setVisibleCount] = createSignal(INITIAL_ICON_COUNT)
 
   const selectedIcon = () =>
-    isLucideIconName(props.value) ? props.value : DEFAULT_FOLDER_ICON
+    props.value && Object.prototype.hasOwnProperty.call(icons, props.value)
+      ? (props.value as LucideIconName)
+      : DEFAULT_FOLDER_ICON
   const initiallySelectedIcon = selectedIcon()
 
   const filteredIcons = createMemo(() => {

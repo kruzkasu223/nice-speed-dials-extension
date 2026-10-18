@@ -4,3 +4,7 @@ dist
 .output
 stats.html
 stats-*.json
+
+# Local browser regression artifacts
+.playwright-cli/
+output/playwright/
