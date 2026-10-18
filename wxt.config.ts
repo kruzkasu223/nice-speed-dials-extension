@@ -39,8 +39,10 @@ export default defineConfig({
       "contextMenus",
       "storage",
       "tabs",
+      "declarativeNetRequestWithHostAccess",
       ...(env.browser !== "firefox" ? ["favicon"] : []),
     ],
+    host_permissions: ["https://www.youtube-nocookie.com/*"],
     icons: {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

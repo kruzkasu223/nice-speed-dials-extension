@@ -1,6 +1,6 @@
 # Privacy policy for Nice Speed Dials
 
-Last updated: August 31, 2026
+Last updated: October 18, 2026
 
 Nice Speed Dials does not require an account and does not include analytics.
 
@@ -21,6 +21,13 @@ saved site to FaviconKit (`ico.faviconkit.net`) to retrieve its icon. It does
 not send the full saved address, bookmark name, or folder name.
 
 ## External pages
+
+The release-notes page embeds video overviews using YouTube's privacy-enhanced
+domain (`www.youtube-nocookie.com`). Loading or playing these videos connects to
+YouTube, which applies its own privacy policies. The extension supplies its
+application identifier as the video request's referrer so YouTube can identify
+the embedding app. Permission for this domain is used only to set that header
+for the two release videos embedded by the extension.
 
 The review and support buttons open the relevant browser store or Buy Me a
 Coffee page only when you choose them. Those sites receive the information a

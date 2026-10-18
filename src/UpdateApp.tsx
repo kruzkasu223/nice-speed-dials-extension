@@ -1,4 +1,4 @@
-import { For, onMount, type JSX } from "solid-js"
+import { For, onMount, Show, type JSX } from "solid-js"
 import changelog from "../CHANGELOG.md?raw"
 import { AppreciationActions } from "~/components/AppreciationActions"
 
@@ -50,6 +50,11 @@ const renderInline = (text: string): JSX.Element[] =>
     )
 
 const releases = parseChangelog(changelog)
+
+const releaseVideos: Record<string, string> = {
+  v1: "_elcX0A3V9I",
+  v6: "-EoPEjAIyec",
+}
 
 export const UpdateApp = () => {
   const latestRelease = releases[0]
@@ -106,6 +111,32 @@ export const UpdateApp = () => {
                       {release.date}
                     </time>
                   </header>
+
+                  <Show
+                    when={releaseVideos[release.version.split(" ")[0] ?? ""]}
+                  >
+                    {(videoId) => (
+                      <div class="mt-6">
+                        <iframe
+                          class="aspect-video w-full rounded-xl border-0"
+                          src={`https://www.youtube-nocookie.com/embed/${videoId()}`}
+                          title={`${release.version} video overview`}
+                          loading="lazy"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowfullscreen
+                        />
+                        <a
+                          class="mt-2 inline-block text-primary text-sm underline underline-offset-4"
+                          href={`https://www.youtube.com/watch?v=${videoId()}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Watch {release.version} on YouTube
+                        </a>
+                      </div>
+                    )}
+                  </Show>
 
                   <div class="mt-6 space-y-6">
                     <For each={release.sections}>
